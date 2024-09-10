@@ -8,6 +8,62 @@ Licensed under the GPLv3.0. See LICENSE for more information.
 
 Parts of this repository are based on [LLK/scratch-desktop](https://github.com/LLK/scratch-desktop).
 
+## SIDEKICK Desktop
+
+### Set up Project
+
+1. Initialise extention submodules:
+
+    ```bash
+    git submodule init
+    git submodule update
+    ```
+
+2. Clean cache and install dependencies:
+
+    ```bash
+    npm cache clean --force
+    npm ci
+    ```
+
+3. Fetch files:
+
+    ```bash
+    npm run fetch
+    ```
+
+### Build the webpack portions in src-renderer-webpack
+
+- For development builds:
+
+    ```bash
+    npm run webpack:compile
+    ```
+
+- Optimized version:
+
+    ```bash
+    npm run webpack:prod
+    ```
+
+### Package up the final Electron binaries
+
+#### Build for Windows
+
+- NSIS Installer:
+
+    ```bash
+    npx electron-builder --windows nsis --x64
+    ```
+
+#### Build for Raspberry Pi (4B)
+
+- Debian Package:
+
+    ```bash
+    npx electron-builder --linux deb --arm64
+    ```
+
 ## Website
 
 The website source code is in the `docs` folder.

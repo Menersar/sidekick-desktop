@@ -17,6 +17,9 @@ const privilegedFetch = require('../fetch');
 const RichPresence = require('../rich-presence.js');
 const FileAccessWindow = require('./file-access-window.js');
 
+const Gpio = require('pigpio').Gpio;
+
+
 const TYPE_FILE = 'file';
 const TYPE_URL = 'url';
 const TYPE_SCRATCH = 'scratch';
@@ -521,6 +524,91 @@ class EditorWindow extends ProjectRunningWindow {
 
     ipc.handle('set-is-full-screen', (event, isFullScreen) => {
       this.isInEditorFullScreen = !!isFullScreen;
+    });
+
+
+    ipc.on("gpio-pull", (event, gpioPin, pullOp) => {
+      if (process.platform === "linux") {
+        const gpio = require(process.resourcesPath + "/static/gpiolib.node");
+
+        //
+        event.returnValue = gpio.pull(gpioPin, pullOp);
+        // gpio.pull(gpioPin, pullOp);
+        // event.returnValue = 1;
+        //
+      } else {
+        event.returnValue = -1;
+      }
+    });
+    
+    ipc.on("gpio-set", (event, gpioPin, drive) => {
+      if (process.platform === "linux") {
+        const gpio = require(process.resourcesPath + "/static/gpiolib.node");
+        
+        //
+        event.returnValue = gpio.set(gpioPin, drive);
+        // gpio.set(gpioPin, drive);
+        // event.returnValue = 1;
+        //
+      } else {
+        event.returnValue = -1;
+      }
+    });
+    
+    ipc.on("gpio-get", (event, gpioPin) => {
+      if (process.platform === "linux") {
+        const gpio = require(process.resourcesPath + "/static/gpiolib.node");
+        event.returnValue = gpio.get(gpioPin, -1, -1);
+      } else {
+        event.returnValue = -1;
+      }
+    });
+
+    ipc.on("gpio-get-distance", (event, gpioTriggerPin, gpioEchoPin) => {
+
+      if (process.platform === "linux") {
+        const MICROSECDONDS_PER_CM = 1e6/34321;
+        // const gpio = require(process.resourcesPath + "/static/gpiolib.node");
+        
+        const trigger = new Gpio(gpioTriggerPin, {mode: Gpio.OUTPUT});
+        const echo = new Gpio(gpioEchoPin, {mode: Gpio.INPUT, alert: true});
+
+        trigger.digitalWrite(0); // Make sure trigger is low
+        
+        const watchHCSR04 = () => {
+          let startTick;
+          echo.on('alert', (level, tick) => {
+            if (level == 1) {
+              startTick = tick;
+            } else {
+              const endTick = tick;
+              const diff = (endTick >> 0) - (startTick >> 0); // Unsigned 32 bit arithmetic
+              const distance = diff / 2 / MICROSECDONDS_PER_CM;
+              console.log("Ultrasonic Sensor Distance: " + distance);
+              event.returnValue = distance;
+            }
+          });
+        };
+        
+        watchHCSR04();
+
+        // trigger.digitalWrite(0); // Make sure trigger is low
+        
+        // const gpio = require(process.resourcesPath + "/static/gpiolib.node");
+        // gpio.gpioWrite(gpioTriggerPin, 0);
+        // gpio.gpioTrigger(gpioTriggerPin, 10, 1) // Set trigger high for 10 microseconds
+
+        // const handler = (gpioEchoPin, level, tick) => {
+        //   this.emit('alert', level, tick);
+        // };
+    
+        // gpio.gpioSetAlertFunc(gpioEchoPin, handler);
+        
+        // event.returnValue = gpio.get(gpioPin, -1, -1);
+        // event.returnValue = gpio.get(gpioPin, -1, -1);
+      } else {
+        event.returnValue = -1;
+      }
     });
 
     this.loadURL('tw-editor://./gui/gui.html');

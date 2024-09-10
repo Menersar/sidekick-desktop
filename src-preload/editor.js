@@ -21,7 +21,15 @@ contextBridge.exposeInMainWorld('EditorPreload', {
   setExportForPackager: (callback) => {
     exportForPackager = callback;
   },
-  setIsFullScreen: (isFullScreen) => ipcRenderer.invoke('set-is-full-screen', isFullScreen)
+  setIsFullScreen: (isFullScreen) => ipcRenderer.invoke('set-is-full-screen', isFullScreen),
+
+  // Pi OS GPIO extensions
+  gpioSet: (pin, drive) => ipcRenderer.sendSync("gpio-set", pin, drive),
+  gpioToggle: (pin) => ipcRenderer.sendSync("gpio-toggle", pin),
+  gpioGet: (pin, io, pull) => ipcRenderer.sendSync("gpio-get", pin, io, pull),
+  gpioPull: (pin, op) => ipcRenderer.sendSync("gpio-pull", pin, op),
+
+  gpioGetDistance: (triggerPin, echoPin) => ipcRenderer.invoke("gpio-get-distance", triggerPin, echoPin),
 });
 
 let exportForPackager = () => Promise.reject(new Error('exportForPackager missing'));
